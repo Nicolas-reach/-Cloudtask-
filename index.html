@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CloudTask ☁️</title>
+    <style>
+        /* Estilos básicos para ficar bonito */
+        body { font-family: 'Segoe UI', sans-serif; max-width: 600px; margin: 2rem auto; background: #1a1a1a; color: #e0e0e0; }
+        h1 { text-align: center; color: #4CAF50; margin-bottom: 2rem; }
+        
+        /* Área de adicionar */
+        .input-group { display: flex; gap: 10px; margin-bottom: 20px; }
+        input { flex: 1; padding: 12px; border-radius: 6px; border: 1px solid #333; background: #2d2d2d; color: white; outline: none; }
+        input:focus { border-color: #4CAF50; }
+        button.add-btn { padding: 12px 25px; background: #4CAF50; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        button.add-btn:hover { background: #45a049; }
+
+        /* Lista de tarefas */
+        ul { list-style: none; padding: 0; }
+        li { background: #2d2d2d; margin: 10px 0; padding: 15px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid #4CAF50; transition: transform 0.2s; }
+        li:hover { transform: translateX(5px); }
+        
+        /* Botão de excluir */
+        .delete-btn { background: #ff4444; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; margin-left: 10px; }
+        .delete-btn:hover { background: #cc0000; }
+        
+        small { color: #888; font-size: 0.8em; margin-right: 10px; }
+    </style>
+</head>
+<body>
+
+    <h1>CloudTask ☁️</h1>
+
+    <div class="input-group">
+        <input type="text" id="taskInput" placeholder="O que você precisa fazer?">
+        <button class="add-btn" onclick="adicionarTarefa()">Adicionar</button>
+    </div>
+
+    <ul id="listaTarefas">
+        </ul>
+
+    <script>
+        const API_URL = 'http://localhost:3000/tasks';
+
+        // 1. CARREGAR TAREFAS (GET) - Com Checkbox!
+async function carregarTarefas() {
+    try {
+        const response = await fetch(API_URL);
+        const tarefas = await response.json();
+        
+        const lista = document.getElementById('listaTarefas');
+        lista.innerHTML = '';
+
+        tarefas.forEach(tarefa => {
+            const item = document.createElement('li');
+            
+            // Se estiver completa, risca o texto e marca o checkbox
+            const riscado = tarefa.completed ? 'text-decoration: line-through; color: #888;' : '';
+            const checkado = tarefa.completed ? 'checked' : '';
+
+            item.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <input type="checkbox" ${checkado} onchange="atualizarStatus('${tarefa.id}', this.checked)">
+                    <span style="${riscado}">${tarefa.title}</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <button class="delete-btn" onclick="deletarTarefa('${tarefa.id}')">X</button>
+                </div>
+            `;
+            lista.appendChild(item);
+        });
+    } catch (erro) {
+        console.error("Erro ao carregar:", erro);
+    }
+}
+
+        // 2. ADICIONAR TAREFA (POST)
+        async function adicionarTarefa() {
+            const input = document.getElementById('taskInput');
+            const titulo = input.value;
+
+            if (!titulo) return alert("Escreva algo!");
+
+            try {
+                await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title: titulo })
+                });
+
+                input.value = ''; // Limpa o campo
+                carregarTarefas(); // Recarrega a lista
+            } catch (erro) {
+                console.error("Erro ao adicionar:", erro);
+            }
+        }
+
+        // 3. DELETAR TAREFA (DELETE)
+        async function deletarTarefa(id) {
+            if (!confirm("Tem certeza que quer excluir?")) return;
+
+            try {
+                await fetch(`${API_URL}/${id}`, {
+                    method: 'DELETE'
+                });
+                carregarTarefas(); // Atualiza a lista removendo o item
+            } catch (erro) {
+                alert("Erro ao excluir!");
+                console.error(erro);
+            }
+        }
+
+        // 4. ATUALIZAR STATUS (PUT) - Marcar como feita/não feita
+async function atualizarStatus(id, status) {
+    try {
+        await fetch(`${API_URL}/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ completed: status })
+        });
+        // Recarrega para garantir que o visual bate com o banco
+        carregarTarefas();
+    } catch (erro) {
+        console.error("Erro ao atualizar:", erro);
+        alert("Erro ao mudar status!");
+    }
+}
+
+        // Carrega as tarefas assim que a página abre
+        carregarTarefas();
+    </script>
+</body>
+</html>
