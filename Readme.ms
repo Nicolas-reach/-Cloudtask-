@@ -15,6 +15,8 @@ Framework web para Node.js.
 ### JSON (JavaScript Object Notation)
 Formato padrão para intercâmbio de dados, escolhido por ser leve e legível.
 
+---
+
 ## 2. Estrutura e Configuração
 
 ### Inicialização
@@ -30,7 +32,8 @@ O comando `npm init -y` cria o arquivo `package.json`, que serve como manifesto 
 ```bash
 npm install express cors dotenv @aws-sdk/client-dynamodb @aws-sdk/lib-dynamodb
 npm install nodemon -D 
- ```
+```
+---
  3. Implementação da API (Endpoints)
 O servidor roda na porta 3000 e utiliza o middleware express.json() para interpretar o corpo das requisições.
 
@@ -64,6 +67,8 @@ Lógica: Atualiza o status de conclusão (completed) da tarefa sem apagar o regi
 
 Status HTTP: 200 OK
 
+---
+
 ## 4. Testes e Validação (Postman)
 A validação simula um cliente HTTP externo.
 
@@ -73,10 +78,14 @@ Content-Type: application/json
 
 Body: configurado como raw > JSON.
 
+---
+
 ## 5. Versionamento (Git)
 Arquivo .gitignore configurado para ignorar a pasta node_modules e arquivos sensíveis.
 
 Motivo: Dependências devem ser instaladas via npm install e chaves de segurança não devem ser versionadas.
+
+---
 
 ## 6. Integração com Banco de Dados em Nuvem (AWS DynamoDB)
 Substituição da memória volátil (Array local) por um banco de dados NoSQL gerenciado pela Amazon Web Services (AWS).
@@ -89,6 +98,7 @@ Bibliotecas AWS SDK v3:
 
 Conceito de Persistência: Os dados agora sobrevivem ao reinício do servidor, sendo armazenados fisicamente nos Data Centers da AWS (Região us-east-1).
 
+---
 
 ## 7. Segurança e Variáveis de Ambiente (.env)
 Gerenciamento de credenciais sensíveis (Chaves de Acesso AWS) fora do código-fonte.
@@ -103,6 +113,8 @@ Arquivo .gitignore: Atualizado para incluir .env.
 
 Motivo Crítico: Chaves de acesso nunca devem ser versionadas no Git/GitHub para evitar roubo de credenciais e cobranças indevidas na nuvem.
 
+---
+
 ## 8. Integração Backend x Frontend (CORS)
 Configuração necessária para permitir que o navegador acesse a API.
 
@@ -113,6 +125,8 @@ Problema: Por segurança, navegadores bloqueiam requisições feitas de origens 
 Solução: Instalação do pacote cors e uso do app.use(cors()).
 
 Função: Libera o acesso para que o Frontend (site) consiga fazer fetch nos dados do Backend.
+
+---
 
 ## 9. Consumo da API (Frontend Simples)
 Criação de interface visual (index.html) para interação com o usuário.
