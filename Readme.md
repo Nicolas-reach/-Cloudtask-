@@ -1,138 +1,65 @@
-# 📘 Documentação de Estudo: API REST com Node.js (Projeto CloudTask)
+☁️ CloudTask: API REST Segura e Multiusuário
+Desenvolvedor: Nicolas Forcione e Oliveira e Souza
+Objetivo: Desenvolvimento Full-Stack de um gerenciador de tarefas em Node.js com arquitetura REST, banco de dados na nuvem (AWS DynamoDB) e sistema completo de autenticação JWT.
 
-**Objetivo:** Desenvolvimento de uma API para gerenciamento de tarefas utilizando JavaScript no backend, seguindo a arquitetura REST e integração com Cloud Computing.
+## 1. Minhas Contribuições Técnicas
+Este projeto evoluiu de um modelo de dados público para uma aplicação isolada e segura. Minhas principais implementações incluem:
 
-## 1. Stack Tecnológica
+Autenticação e Criptografia: Criação de rotas de Cadastro e Login do zero, utilizando ```bcrypt``` para não armazenar senhas em texto puro.
 
-### Node.js
-Ambiente de execução (Runtime) que permite rodar JavaScript no servidor.
-* **Características:** Utiliza um modelo de I/O não bloqueante (Assíncrono), ideal para lidar com múltiplas requisições simultâneas.
+Sessões Stateless (JWT): Implementação de JSON Web Tokens para gerenciar acessos sem necessidade de guardar estado no servidor.
 
-### Express
-Framework web para Node.js.
-* **Função:** Abstrai a complexidade de criar servidores HTTP puros, gerenciando roteamento (URLs), requisições e respostas.
+Middleware de Proteção: Desenvolvimento de um "guarda de rota" que intercepta requisições, valida o token do usuário e bloqueia acessos não autorizados.
 
-### JSON (JavaScript Object Notation)
-Formato padrão para intercâmbio de dados, escolhido por ser leve e legível.
+Isolamento de Dados (Multijogador): Modelagem no AWS DynamoDB vinculando cada tarefa ao e-mail do seu criador. Filtros no backend garantem que um usuário não possa visualizar, alterar ou excluir tarefas de terceiros.
 
----
+Integração Frontend: Adaptação da interface para gerenciar o login, salvar o token no ```localStorage``` do navegador e injetá-lo dinamicamente no cabeçalho (Headers) de todas as requisições ```fetch```.
 
-## 2. Estrutura e Configuração
+## 2. Stack Tecnológica
+Backend: Node.js, Express
 
-### Inicialização
-O comando `npm init -y` cria o arquivo `package.json`, que serve como manifesto do projeto.
+Banco de Dados: AWS DynamoDB (us-east-1), ```@aws-sdk/client-dynamodb```
 
-### Dependências Instaladas
-* `express`: Framework principal da API.
-* `nodemon`: Dependência de desenvolvimento (-D) para reinício automático do servidor.
-* `@aws-sdk/client-dynamodb`: Cliente AWS para conexão com banco de dados.
-* `dotenv`: Gerenciamento de variáveis de ambiente.
-* `cors`: Liberação de acesso para o Frontend.
+Segurança: ```jsonwebtoken``` (JWT), ```bcrypt```, ```dotenv``` (Gestão de variáveis de ambiente)
 
-```bash
-npm install express cors dotenv @aws-sdk/client-dynamodb @aws-sdk/lib-dynamodb
-npm install nodemon -D 
-```
----
- 3. Implementação da API (Endpoints)
-O servidor roda na porta 3000 e utiliza o middleware express.json() para interpretar o corpo das requisições.
+Frontend: HTML5, CSS3 tradicional, Vanilla JavaScript (Fetch API)
 
-**A. Listar Dados (GET)**
-Rota: /tasks
+## 3. Endpoints da API
+Autenticação (Rotas Públicas)
+```POST /cadastro```: Recebe e-mail e senha, aplica o hash na senha e salva no banco de Usuários.
 
-Lógica: Busca a lista completa de tarefas diretamente do banco de dados AWS DynamoDB.
+```POST /login```: Verifica credenciais e retorna um Token JWT válido.
 
-Status HTTP: 200 OK
+Gerenciamento de Tarefas (Rotas Protegidas)
+Requerem Header: ```Authorization: Bearer <token>```
 
-**B. Criar Dados (POST)**
-Rota: /tasks
+GET /tasks: Busca no DynamoDB e retorna apenas as tarefas atreladas ao e-mail do usuário autenticado.
 
-Entrada: Recebe um objeto JSON no body.
+```POST /tasks```: Cria uma nova tarefa, gerando um ID único e carimbando automaticamente o e-mail do criador no registro.
 
-Lógica: Gera um ID único (Timestamp), cria o objeto e envia o comando PutCommand para salvar na AWS.
+```PUT /tasks/:id```: Atualiza o status (concluída/pendente) da tarefa.
 
-Status HTTP: 201 Created
-
-**C. Remover Dados (DELETE)**
-Rota: /tasks/:id
-
-Conceito (req.params): O :id indica um Parâmetro de Rota, capturando valores dinâmicos da URL.
-
-Lógica: Envia comando de deleção para a tabela no DynamoDB baseada na chave primária (ID).
-
-**D. Atualizar Dados (PUT)**
-Rota: /tasks/:id
-
-Lógica: Atualiza o status de conclusão (completed) da tarefa sem apagar o registro.
-
-Status HTTP: 200 OK
-
----
+```DELETE /tasks/:id```: Remove a tarefa da AWS (protegido por ConditionExpression para garantir que apenas o dono possa deletá-la).
 
 ## 4. Testes e Validação (Postman)
-A validação simula um cliente HTTP externo.
+A validação das rotas protegidas exige a configuração de dois Headers no cliente HTTP:
 
-Configuração de Header (POST/PUT):
+```Content-Type```: ```application/json```
 
-Content-Type: application/json
+```Authorization```: ```Bearer SEU_TOKEN_AQUI```
 
-Body: configurado como raw > JSON.
+## 5. Banco de Dados e Cloud Computing (AWS)
+O sistema utiliza duas tabelas no DynamoDB (NoSQL):
 
----
+Users: Armazena e-mails e senhas criptografadas.
 
-## 5. Versionamento (Git)
-Arquivo .gitignore configurado para ignorar a pasta node_modules e arquivos sensíveis.
+Tasks: Armazena as tarefas contendo um ID gerado via timestamp, o título, o status e a chave estrangeira lógica (```userEmail```) para relacionamento com o dono.
+Os dados persistem fisicamente nos Data Centers da AWS, sobrevivendo a reinicializações do servidor.
 
-Motivo: Dependências devem ser instaladas via npm install e chaves de segurança não devem ser versionadas.
+## 6. Segurança e Integração
+Variáveis de Ambiente (```.env```): As credenciais da AWS (```AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY```) e o segredo do token (```JWT_SECRET```) estão isolados. O arquivo ```.env``` está no ```.gitignore``` para prevenir vazamento de chaves no repositório.
 
----
+CORS -: Middleware configurado no Express para permitir requisições cross-origin do Frontend para a API.
 
-## 6. Integração com Banco de Dados em Nuvem (AWS DynamoDB)
-Substituição da memória volátil (Array local) por um banco de dados NoSQL gerenciado pela Amazon Web Services (AWS).
-
-Bibliotecas AWS SDK v3:
-
-@aws-sdk/client-dynamodb: Cliente de baixo nível para conexão com a AWS.
-
-@aws-sdk/lib-dynamodb: Cliente de alto nível ("DocumentClient") que simplifica a conversão de objetos JavaScript para o formato do banco.
-
-Conceito de Persistência: Os dados agora sobrevivem ao reinício do servidor, sendo armazenados fisicamente nos Data Centers da AWS (Região us-east-1).
-
----
-
-## 7. Segurança e Variáveis de Ambiente (.env)
-Gerenciamento de credenciais sensíveis (Chaves de Acesso AWS) fora do código-fonte.
-
-Biblioteca dotenv: Carrega as variáveis definidas no arquivo .env para dentro do process.env do Node.js.
-
-Boas Práticas de Segurança:
-
-Arquivo .env: Contém AWS_ACCESS_KEY_ID e AWS_SECRET_ACCESS_KEY.
-
-Arquivo .gitignore: Atualizado para incluir .env.
-
-Motivo Crítico: Chaves de acesso nunca devem ser versionadas no Git/GitHub para evitar roubo de credenciais e cobranças indevidas na nuvem.
-
----
-
-## 8. Integração Backend x Frontend (CORS)
-Configuração necessária para permitir que o navegador acesse a API.
-
-Middleware CORS (Cross-Origin Resource Sharing):
-
-Problema: Por segurança, navegadores bloqueiam requisições feitas de origens diferentes (ex: um arquivo HTML local tentando acessar o localhost:3000).
-
-Solução: Instalação do pacote cors e uso do app.use(cors()).
-
-Função: Libera o acesso para que o Frontend (site) consiga fazer fetch nos dados do Backend.
-
----
-
-## 9. Consumo da API (Frontend Simples)
-Criação de interface visual (index.html) para interação com o usuário.
-
-Fetch API (JavaScript do Navegador):
-
-Método Async/Await: Utilizado para fazer requisições HTTP assíncronas ao servidor Node.js sem travar a tela.
-
-Manipulação do DOM: O JavaScript recebe o JSON do backend e cria dinamicamente os elementos HTML (<li>, <span>, <button>) para exibir, concluir e excluir tarefas na tela.
+## 7. Consumo pelo Frontend (Navegador)
+A interface captura as credenciais, envia ao endpoint de login e armazena o token recebido no ```localStorage```. Funções assíncronas (```async/await```) utilizam o Fetch API para enviar o token ao backend, receber os dados filtrados e construir o DOM dinamicamente, garantindo uma transição fluida entre o estado "Deslogado" (Tela de Login) e "Logado" (Dashboard de Tarefas).
