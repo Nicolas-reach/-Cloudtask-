@@ -32,7 +32,6 @@ function verificarToken(req, res, next) {
 const { dynamoDB } = require('./src/dynamoClient'); 
 
 const app = express();
-const PORT = 3000;
 const TABLE_NAME = "Tasks"; // Nome da tabela na AWS
 
 app.use(express.json());
