@@ -42,5 +42,5 @@ app.delete('/tarefas/:id', (req, res) => {
 
 
 app.listen(port, () => {
-    console.log(`🚀 Servidor rodando em http://localhost:${port}`);
+    console.log(`🚀 Servidor rodando em https://cloudtask-api-u0aa.onrender.com:${port}`);
 });

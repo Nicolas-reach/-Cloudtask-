@@ -52,7 +52,7 @@
     </div>
 
     <script>
-        const API_URL = 'http://localhost:3000/tasks';
+        const API_URL = 'https://cloudtask-api-u0aa.onrender.com';
 
         // --- 1. FUNÇÃO DE LOGIN ---
         async function fazerLogin() {
@@ -60,7 +60,7 @@
             const password = document.getElementById('senhaInput').value;
 
             try {
-                const resposta = await fetch('http://localhost:3000/login', {
+                const resposta = await fetch(`${API_URL}/login`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email, password })
@@ -93,48 +93,53 @@
             document.getElementById('app-container').style.display = 'none'; // Esconde app
         }
 
-        // --- 3. CARREGAR TAREFAS (GET) - COM O CRACHÁ! ---
-        async function carregarTarefas() {
-            const token = localStorage.getItem('tokenCloudTask');
-            if (!token) return; // Segurança extra
+       // --- 3. CARREGAR TAREFAS (GET) - COM O CRACHÁ! ---
+async function carregarTarefas() {
+    const token = localStorage.getItem('tokenCloudTask');
+    if (!token) return; // Segurança extra
 
-            try {
-                const response = await fetch(API_URL, {
-                    headers: { 'Authorization': 'Bearer ' + token } // <--- O CRACHÁ AQUI!
-                });
-                
-                // Se o token for inválido, desloga
-                if (response.status === 401 || response.status === 403) {
-                    sair();
-                    return;
-                }
-
-                const tarefas = await response.json();
-                const lista = document.getElementById('listaTarefas');
-                lista.innerHTML = ''; // Limpa antes de preencher
-
-                tarefas.forEach(tarefa => {
-                    const item = document.createElement('li');
-                    
-                    const riscado = tarefa.completed ? 'text-decoration: line-through; color: #888;' : '';
-                    const checkado = tarefa.completed ? 'checked' : '';
-
-                    item.innerHTML = `
-                        <div style="display: flex; align-items: center; gap: 10px;">
-                            <input type="checkbox" ${checkado} onchange="atualizarStatus('${tarefa.id}', this.checked)">
-                            <span style="${riscado}">${tarefa.title}</span>
-                        </div>
-                        <div style="display: flex; align-items: center; gap: 10px;">
-                            <button class="delete-btn" onclick="deletarTarefa('${tarefa.id}')">X</button>
-                        </div>
-                    `;
-                    lista.appendChild(item);
-                });
-            } catch (erro) {
-                console.error("Erro ao carregar:", erro);
-            }
+    try {
+        const resposta = await fetch(`${API_URL}/tasks`, {
+            headers: { 'Authorization': 'Bearer ' + token } // <--- O CRACHÁ AQUI!
+        });
+        
+        // Se o token for inválido, desloga
+        if (resposta.status === 401 || resposta.status === 403) {
+            sair();
+            return;
         }
 
+        // CORREÇÃO 1: Usar 'resposta' em vez de 'response'
+        const dados = await resposta.json();
+
+        // CORREÇÃO 2: DynamoDB devolve os dados dentro de 'Items'. 
+        // Essa linha garante que 'tarefas' seja sempre um array.
+        const tarefas = Array.isArray(dados) ? dados : (dados.Items || []);
+
+        const lista = document.getElementById('listaTarefas');
+        lista.innerHTML = ''; // Limpa antes de preencher
+
+        tarefas.forEach(tarefa => {
+            const item = document.createElement('li');
+            
+            const riscado = tarefa.completed ? 'text-decoration: line-through; color: #888;' : '';
+            const checkado = tarefa.completed ? 'checked' : '';
+
+            item.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <input type="checkbox" ${checkado} onchange="atualizarStatus('${tarefa.id}', this.checked)">
+                    <span style="${riscado}">${tarefa.title}</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <button class="delete-btn" onclick="deletarTarefa('${tarefa.id}')">X</button>
+                </div>
+            `;
+            lista.appendChild(item);
+        });
+    } catch (erro) {
+        console.error("Erro ao carregar:", erro);
+    }
+}
         // --- 4. ADICIONAR TAREFA (COM RASTREADOR) ---
         async function adicionarTarefa() {
             console.log("Passo 1: Botão clicado!");
@@ -150,7 +155,7 @@
 
             try {
                 console.log("Passo 3: Enviando dados para o servidor...");
-                const resposta = await fetch(API_URL, {
+                const resposta = await fetch(`${API_URL}/tasks`, {
                     method: 'POST',
                     headers: { 
                         'Content-Type': 'application/json',
@@ -186,7 +191,7 @@
             const token = localStorage.getItem('tokenCloudTask');
 
             try {
-                const resposta = await fetch(`${API_URL}/${id}`, {
+                const resposta = await fetch(`${API_URL}/tasks/${id}`, {
                     method: 'DELETE',
                     headers: { 'Authorization': 'Bearer ' + token }
                 });
@@ -203,34 +208,32 @@
 
         // --- 6. ATUALIZAR STATUS (PUT) - Marcar como feita/não feita ---
         async function atualizarStatus(id, status) {
-            const token = localStorage.getItem('tokenCloudTask');
-            try {
-                await fetch(`${API_URL}/${id}`, {
-                    method: 'PUT',
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        'Authorization': 'Bearer ' + token
-                    },
-                    body: JSON.stringify({ completed: status })
-                });
-                carregarTarefas();
-            } catch (erro) {
-                console.error("Erro ao atualizar:", erro);
-                alert("Erro ao mudar status!");
-            }
+    const token = localStorage.getItem('tokenCloudTask');
+    if (!token) return;
+
+    try {
+        // CORREÇÃO: Adicionamos '/tasks/' antes do ID na URL
+        const resposta = await fetch(`${API_URL}/tasks/${id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            // Enviamos o status (true ou false) que vem do checkbox
+            body: JSON.stringify({ completed: status })
+        });
+
+        if (resposta.ok) {
+            console.log("Status atualizado com sucesso!");
+            carregarTarefas(); // Recarrega a lista para mostrar o riscado
+        } else {
+            console.error("Erro ao atualizar no servidor");
         }
-
-        // --- VERIFICAÇÃO INICIAL AO ABRIR A PÁGINA ---
-        // Se já tiver um token salvo, pula o login e mostra o app direto
-        window.onload = function() {
-            const token = localStorage.getItem('tokenCloudTask');
-            if (token) {
-                document.getElementById('login-container').style.display = 'none';
-                document.getElementById('app-container').style.display = 'block';
-                carregarTarefas();
-            }
-        };
-
+    } catch (erro) {
+        console.error("Erro ao atualizar:", erro);
+        alert("Erro ao mudar status!");
+    }
+}
     </script>
 </body>
 </html>
