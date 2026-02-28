@@ -15,6 +15,8 @@ Isolamento de Dados (Multijogador): Modelagem no AWS DynamoDB vinculando cada ta
 
 Integração Frontend: Adaptação da interface para gerenciar o login, salvar o token no ```localStorage``` do navegador e injetá-lo dinamicamente no cabeçalho (Headers) de todas as requisições ```fetch```.
 
+---
+
 ## 2. Stack Tecnológica
 Backend: Node.js, Express
 
@@ -23,6 +25,8 @@ Banco de Dados: AWS DynamoDB (us-east-1), ```@aws-sdk/client-dynamodb```
 Segurança: ```jsonwebtoken``` (JWT), ```bcrypt```, ```dotenv``` (Gestão de variáveis de ambiente)
 
 Frontend: HTML5, CSS3 tradicional, Vanilla JavaScript (Fetch API)
+
+---
 
 ## 3. Endpoints da API
 Autenticação (Rotas Públicas)
@@ -41,12 +45,16 @@ GET /tasks: Busca no DynamoDB e retorna apenas as tarefas atreladas ao e-mail do
 
 ```DELETE /tasks/:id```: Remove a tarefa da AWS (protegido por ConditionExpression para garantir que apenas o dono possa deletá-la).
 
+---
+
 ## 4. Testes e Validação (Postman)
 A validação das rotas protegidas exige a configuração de dois Headers no cliente HTTP:
 
-```Content-Type```: ```application/json```
+`Content-Type`: ```application/json```
 
 ```Authorization```: ```Bearer SEU_TOKEN_AQUI```
+
+---
 
 ## 5. Banco de Dados e Cloud Computing (AWS)
 O sistema utiliza duas tabelas no DynamoDB (NoSQL):
@@ -56,10 +64,28 @@ Users: Armazena e-mails e senhas criptografadas.
 Tasks: Armazena as tarefas contendo um ID gerado via timestamp, o título, o status e a chave estrangeira lógica (```userEmail```) para relacionamento com o dono.
 Os dados persistem fisicamente nos Data Centers da AWS, sobrevivendo a reinicializações do servidor.
 
+---
+
 ## 6. Segurança e Integração
 Variáveis de Ambiente (```.env```): As credenciais da AWS (```AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY```) e o segredo do token (```JWT_SECRET```) estão isolados. O arquivo ```.env``` está no ```.gitignore``` para prevenir vazamento de chaves no repositório.
 
 CORS -: Middleware configurado no Express para permitir requisições cross-origin do Frontend para a API.
 
+---
+
 ## 7. Consumo pelo Frontend (Navegador)
 A interface captura as credenciais, envia ao endpoint de login e armazena o token recebido no ```localStorage```. Funções assíncronas (```async/await```) utilizam o Fetch API para enviar o token ao backend, receber os dados filtrados e construir o DOM dinamicamente, garantindo uma transição fluida entre o estado "Deslogado" (Tela de Login) e "Logado" (Dashboard de Tarefas).
+
+---
+
+## 8. Deploy e Hospedagem em Nuvem
+Para garantir a disponibilidade do sistema na internet, a arquitetura foi dividida e hospedada em serviços de nuvem distintos:
+* **Backend (API):** Hospedado no **Render** (Web Service), rodando o servidor Node.js de forma contínua e conectando-se remotamente ao banco de dados AWS.
+* **Frontend (Interface):** Hospedado no **GitHub Pages**, consumindo a API pública do Render e permitindo o acesso de qualquer dispositivo em produção.
+
+---
+
+## 9. Pipeline CI/CD (GitHub Actions)
+A automação do ciclo de vida do código foi configurada para garantir entregas seguras e contínuas:
+* **Integração Contínua (CI):** Implementação de um workflow (`.github/workflows/main.yml`) utilizando o **GitHub Actions**. A cada push ou pull request na branch principal (`main`), uma máquina virtual Ubuntu baixa o código, configura o ambiente Node.js e executa a instalação de dependências para validar a integridade do build.
+* **Entrega Contínua (CD):** O repositório está integrado diretamente ao Render. Assim que o pipeline do GitHub Actions aprova o código na branch `main`, o Render inicia automaticamente o processo de deploy da nova versão da API sem intervenção manual.
